@@ -1,0 +1,19 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(python -m app.main:*)",
+      "Bash(python:*)",
+      "Bash(pip install:*)",
+      "Bash(if [ -f \"mtbbs.db\" ])",
+      "Bash(then echo \"✅ Database created: mtbbs.db\")",
+      "Bash(sqlite3:*)",
+      "Bash(else echo \"❌ Database not found\")",
+      "Bash(fi)",
+      "Bash(if [ -f \".gitignore\" ])",
+      "Bash(then cat .gitignore)",
+      "Bash(else echo \"File does not exist\")",
+      "Bash(git init:*)",
+      "Bash(git add:*)"
+    ]
+  }
+}
