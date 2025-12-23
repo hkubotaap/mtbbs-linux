@@ -37,6 +37,9 @@ class TelnetHandler:
         # Input buffer
         self.input_buffer = ""
 
+        # Command line for continuous execution (e.g., "n@", "r0@")
+        self.command_line = ""
+
     async def handle(self):
         """Main session handler"""
         try:
@@ -164,7 +167,7 @@ class TelnetHandler:
         await self.send(msg)
 
     async def main_loop(self):
-        """Main command loop"""
+        """Main command loop with continuous command execution support"""
         while True:
             await self.show_main_menu()
             await self.send_line("\r\nCommand: ")
@@ -173,7 +176,13 @@ class TelnetHandler:
             if not command:
                 continue
 
-            cmd = command.upper().strip()
+            # Parse command: first character is the main command, rest is command_line
+            full_cmd = command.upper().strip()
+            cmd = full_cmd[0] if full_cmd else ""
+            self.command_line = full_cmd[1:] if len(full_cmd) > 1 else ""
+
+            # Debug log
+            logger.info(f"Command received: full_cmd='{full_cmd}', cmd='{cmd}', command_line='{self.command_line}'")
 
             try:
                 if cmd == "Q":
@@ -204,6 +213,9 @@ class TelnetHandler:
             except Exception as e:
                 logger.error(f"Command error: {e}", exc_info=True)
                 await self.send_line(f"Error: {str(e)}")
+            finally:
+                # Clear command_line after execution
+                self.command_line = ""
 
     async def show_main_menu(self):
         """Display main menu"""
@@ -217,50 +229,123 @@ class TelnetHandler:
         await self.send(msg)
 
     async def news(self):
-        """Show new messages"""
+        """Show new messages with auto-read support (n@)"""
+        auto_read = "@" in self.command_line
+
         await self.send_line("\r\n=== New Messages ===")
         boards = await self.board_service.get_boards()
+
         for board in boards:
+            if board.read_level > self.user_level:
+                continue
+
             new_count = await self.board_service.get_new_message_count(board.id, self.user_id)
             if new_count > 0:
                 await self.send_line(f"Board {board.board_id}: {board.name} ({new_count} new)")
 
-    async def read_board(self):
-        """Read message board"""
-        await self.send_line("\r\nBoard number (0 to cancel): ")
-        board_no = await self.receive_line()
+                if auto_read:
+                    # Auto-read mode: display all new messages
+                    messages = await self.board_service.get_recent_messages(board.board_id, limit=new_count)
+                    for msg in reversed(messages):
+                        await self.display_message(msg)
 
-        if not board_no or board_no == "0":
+    async def read_board(self):
+        """Read message board with continuous command support (r0@)"""
+        # Parse command_line for board number and auto-read flag
+        auto_read = "@" in self.command_line
+        board_no_str = self.command_line.replace("@", "").strip()
+
+        # If board number not in command_line, show board list and prompt
+        if not board_no_str:
+            boards = await self.board_service.get_boards()
+            await self.send_line("\r\n=== Message Boards ===")
+            for board in boards:
+                if board.read_level <= self.user_level:
+                    msg_count = len(await self.board_service.get_all_messages(board.board_id))
+                    await self.send_line(f"[{board.board_id}] {board.name:20s} ({msg_count} messages) - {board.description or ''}")
+
+            await self.send_line("\r\nBoard number (0 to cancel): ")
+            board_no_str = await self.receive_line()
+
+        if not board_no_str or board_no_str == "0":
             return
 
         try:
-            board_id = int(board_no)
+            board_id = int(board_no_str)
+            board = await self.board_service.get_board(board_id)
+
+            if not board:
+                await self.send_line("Board not found.")
+                return
+
+            if board.read_level > self.user_level:
+                await self.send_line("Access denied. Insufficient level.")
+                return
+
             messages = await self.board_service.get_recent_messages(board_id, limit=20)
 
-            await self.send_line(f"\r\n=== Board {board_id} ===")
-            for msg in messages:
-                await self.send_line(
-                    f"[{msg.message_no}] {msg.title} - {msg.handle_name} ({msg.created_at.strftime('%Y/%m/%d %H:%M')})"
-                )
+            await self.send_line(f"\r\n=== Board {board_id}: {board.name} ===")
+            if not messages:
+                await self.send_line("No messages in this board.")
+                return
 
-            await self.send_line("\r\nMessage number to read (0 to cancel): ")
-            msg_no = await self.receive_line()
+            if auto_read:
+                # Auto-read mode (r0@): Display all messages automatically
+                for msg in reversed(messages):
+                    await self.display_message(msg)
+            else:
+                # Interactive mode: Show list and prompt for message number
+                for msg in reversed(messages):  # Show newest first
+                    await self.send_line(
+                        f"[{msg.message_no}] {msg.title} - {msg.handle_name} ({msg.created_at.strftime('%Y/%m/%d %H:%M')})"
+                    )
 
-            if msg_no and msg_no != "0":
-                message = await self.board_service.get_message(board_id, int(msg_no))
-                if message:
-                    await self.display_message(message)
+                await self.send_line("\r\nMessage number to read (0 to cancel): ")
+                msg_no = await self.receive_line()
+
+                if msg_no and msg_no != "0":
+                    message = await self.board_service.get_message(board_id, int(msg_no))
+                    if message:
+                        await self.display_message(message)
+                    else:
+                        await self.send_line("Message not found.")
 
         except ValueError:
             await self.send_line("Invalid board number.")
+        except Exception as e:
+            logger.error(f"Read board error: {e}", exc_info=True)
+            await self.send_line(f"Error: {str(e)}")
 
     async def enter_message(self):
-        """Post new message"""
-        await self.send_line("\r\nBoard number: ")
-        board_no = await self.receive_line()
+        """Post new message with continuous command support (e0)"""
+        # Parse command_line for board number
+        board_no_str = self.command_line.strip()
+
+        # If board number not in command_line, show board list and prompt
+        if not board_no_str:
+            boards = await self.board_service.get_boards()
+            await self.send_line("\r\n=== Message Boards ===")
+            for board in boards:
+                if board.write_level <= self.user_level:
+                    await self.send_line(f"[{board.board_id}] {board.name} - {board.description or ''}")
+
+            await self.send_line("\r\nBoard number (0 to cancel): ")
+            board_no_str = await self.receive_line()
+
+        if not board_no_str or board_no_str == "0":
+            return
 
         try:
-            board_id = int(board_no)
+            board_id = int(board_no_str)
+            board = await self.board_service.get_board(board_id)
+
+            if not board:
+                await self.send_line("Board not found.")
+                return
+
+            if board.write_level > self.user_level:
+                await self.send_line("Access denied. Insufficient level.")
+                return
 
             await self.send_line("Title: ")
             title = await self.receive_line()
@@ -270,6 +355,7 @@ class TelnetHandler:
                 return
 
             await self.send_line("Body (end with . on a line by itself):")
+            await self.send_line("")
             body_lines = []
 
             while True:
@@ -280,6 +366,10 @@ class TelnetHandler:
 
             body = "\n".join(body_lines)
 
+            if not body:
+                await self.send_line("Message body is required.")
+                return
+
             message = await self.board_service.create_message(
                 board_id=board_id,
                 user_id=self.user_id,
@@ -288,11 +378,12 @@ class TelnetHandler:
                 body=body,
             )
 
-            await self.send_line(f"\r\nMessage #{message.message_no} posted successfully.")
+            await self.send_line(f"\r\nMessage #{message.message_no} posted successfully to board '{board.name}'.")
 
         except ValueError:
             await self.send_line("Invalid board number.")
         except Exception as e:
+            logger.error(f"Enter message error: {e}", exc_info=True)
             await self.send_line(f"Error posting message: {str(e)}")
 
     async def display_message(self, message):

@@ -39,6 +39,7 @@ class User(Base):
     # Status
     is_active = Column(Boolean, default=True)
     is_banned = Column(Boolean, default=False)
+    must_change_password_on_next_login = Column(Boolean, default=False)
 
     def __repr__(self):
         return f"<User {self.user_id} ({self.handle_name})>"

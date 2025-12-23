@@ -54,6 +54,18 @@ export default function Boards() {
     },
   })
 
+  const updateMutation = useMutation({
+    mutationFn: ({ boardId, data }: { boardId: number; data: any }) =>
+      adminAPI.updateBoard(boardId, data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['boards'] })
+      setOpenDialog(false)
+      setEditMode(false)
+      setCurrentBoard(null)
+      setNewBoard({ board_id: 0, name: '', description: '', read_level: 0, write_level: 1 })
+    },
+  })
+
   const deleteMutation = useMutation({
     mutationFn: (boardId: number) => adminAPI.deleteBoard(boardId),
     onSuccess: () => {
@@ -63,6 +75,18 @@ export default function Boards() {
 
   const handleCreate = () => {
     createMutation.mutate(newBoard)
+  }
+
+  const handleUpdate = () => {
+    updateMutation.mutate({
+      boardId: currentBoard.board_id,
+      data: {
+        name: newBoard.name,
+        description: newBoard.description,
+        read_level: newBoard.read_level,
+        write_level: newBoard.write_level,
+      }
+    })
   }
 
   const handleEdit = (board: any) => {
@@ -218,7 +242,11 @@ export default function Boards() {
         </DialogContent>
         <DialogActions>
           <Button onClick={handleClose}>Cancel</Button>
-          <Button onClick={handleCreate} variant="contained" color="primary">
+          <Button
+            onClick={editMode ? handleUpdate : handleCreate}
+            variant="contained"
+            color="primary"
+          >
             {editMode ? 'Update Board' : 'Create Board'}
           </Button>
         </DialogActions>

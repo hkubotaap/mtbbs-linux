@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { useNavigate, useLocation } from 'react-router-dom'
+import { useTranslation } from 'react-i18next'
 import {
   Box,
   Drawer,
@@ -23,22 +24,24 @@ import {
   Cable as CableIcon,
   Settings as SettingsIcon,
 } from '@mui/icons-material'
+import LanguageSwitcher from './LanguageSwitcher'
 
 const drawerWidth = 240
-
-const menuItems = [
-  { text: 'Dashboard', icon: <DashboardIcon />, path: '/' },
-  { text: 'Users', icon: <PeopleIcon />, path: '/users' },
-  { text: 'Boards', icon: <ForumIcon />, path: '/boards' },
-  { text: 'Messages', icon: <MessageIcon />, path: '/messages' },
-  { text: 'Connections', icon: <CableIcon />, path: '/connections' },
-  { text: 'Settings', icon: <SettingsIcon />, path: '/settings' },
-]
 
 export default function Layout({ children }: { children: React.ReactNode }) {
   const [mobileOpen, setMobileOpen] = useState(false)
   const navigate = useNavigate()
   const location = useLocation()
+  const { t } = useTranslation()
+
+  const menuItems = [
+    { text: t('nav.dashboard'), icon: <DashboardIcon />, path: '/' },
+    { text: t('nav.users'), icon: <PeopleIcon />, path: '/users' },
+    { text: t('nav.boards'), icon: <ForumIcon />, path: '/boards' },
+    { text: t('nav.messages'), icon: <MessageIcon />, path: '/messages' },
+    { text: t('nav.connections'), icon: <CableIcon />, path: '/connections' },
+    { text: t('nav.settings'), icon: <SettingsIcon />, path: '/settings' },
+  ]
 
   const handleDrawerToggle = () => {
     setMobileOpen(!mobileOpen)
@@ -86,9 +89,10 @@ export default function Layout({ children }: { children: React.ReactNode }) {
           >
             <MenuIcon />
           </IconButton>
-          <Typography variant="h6" noWrap component="div">
+          <Typography variant="h6" noWrap component="div" sx={{ flexGrow: 1 }}>
             MTBBS Linux - BBS Management System
           </Typography>
+          <LanguageSwitcher />
         </Toolbar>
       </AppBar>
 

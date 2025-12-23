@@ -21,6 +21,17 @@ class UserCreate(BaseModel):
     handle_name: str
     email: str | None = None
     level: int = 1
+    is_active: bool = True
+    must_change_password_on_next_login: bool = False
+
+
+class UserUpdate(BaseModel):
+    handle_name: str | None = None
+    email: str | None = None
+    level: int | None = None
+    password: str | None = None
+    is_active: bool | None = None
+    must_change_password_on_next_login: bool | None = None
 
 
 class UserResponse(BaseModel):
@@ -41,6 +52,13 @@ class BoardCreate(BaseModel):
     description: str | None = None
     read_level: int = 0
     write_level: int = 1
+
+
+class BoardUpdate(BaseModel):
+    name: str | None = None
+    description: str | None = None
+    read_level: int | None = None
+    write_level: int | None = None
 
 
 class BoardResponse(BaseModel):
@@ -110,6 +128,8 @@ async def create_user(user_data: UserCreate):
             handle_name=user_data.handle_name,
             email=user_data.email,
             level=user_data.level,
+            is_active=user_data.is_active,
+            must_change_password_on_next_login=user_data.must_change_password_on_next_login,
         )
         return user
     except Exception as e:
@@ -134,6 +154,33 @@ async def get_user(user_id: str):
         raise HTTPException(status_code=404, detail="User not found")
 
     return user
+
+
+@router.put("/users/{user_id}", response_model=UserResponse)
+async def update_user(user_id: str, user_data: UserUpdate):
+    """Update user"""
+    user_service = UserService()
+    try:
+        update_dict = {}
+        if user_data.handle_name is not None:
+            update_dict['handle_name'] = user_data.handle_name
+        if user_data.email is not None:
+            update_dict['email'] = user_data.email
+        if user_data.level is not None:
+            update_dict['level'] = user_data.level
+        if user_data.password is not None:
+            update_dict['password_hash'] = user_service.hash_password(user_data.password)
+        if user_data.is_active is not None:
+            update_dict['is_active'] = user_data.is_active
+        if user_data.must_change_password_on_next_login is not None:
+            update_dict['must_change_password_on_next_login'] = user_data.must_change_password_on_next_login
+
+        user = await user_service.update_user(user_id, **update_dict)
+        if not user:
+            raise HTTPException(status_code=404, detail="User not found")
+        return user
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=str(e))
 
 
 @router.delete("/users/{user_id}")
@@ -184,6 +231,37 @@ async def get_board(board_id: int):
         raise HTTPException(status_code=404, detail="Board not found")
 
     return board
+
+
+@router.put("/boards/{board_id}", response_model=BoardResponse)
+async def update_board(board_id: int, board_data: BoardUpdate):
+    """Update board"""
+    board_service = BoardService()
+    try:
+        board = await board_service.update_board(
+            board_id=board_id,
+            name=board_data.name,
+            description=board_data.description,
+            read_level=board_data.read_level,
+            write_level=board_data.write_level,
+        )
+        if not board:
+            raise HTTPException(status_code=404, detail="Board not found")
+        return board
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=str(e))
+
+
+@router.delete("/boards/{board_id}")
+async def delete_board(board_id: int):
+    """Delete board (soft delete)"""
+    board_service = BoardService()
+    success = await board_service.delete_board(board_id)
+
+    if not success:
+        raise HTTPException(status_code=404, detail="Board not found")
+
+    return {"message": "Board deleted successfully"}
 
 
 # System stats
@@ -292,5 +370,61 @@ async def initialize_messages():
     try:
         count = await message_service.initialize_default_messages()
         return {"message": f"Initialized {count} default messages"}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.post("/database/initialize")
+async def initialize_database():
+    """Initialize database with test data"""
+    from app.core.database import init_database, async_session
+    from app.models.user import User
+    from app.models.board import Board
+    from app.models.message import Message
+    from sqlalchemy import delete
+
+    try:
+        # Clear existing data
+        async with async_session() as session:
+            await session.execute(delete(Message))
+            await session.execute(delete(Board))
+            await session.execute(delete(User))
+            await session.commit()
+
+        # Initialize database schema
+        await init_database()
+
+        # Create test data
+        user_service = UserService()
+        board_service = BoardService()
+        message_service = MessageService()
+
+        # Create admin user
+        await user_service.create_user(
+            user_id="sysop",
+            password="p",
+            handle_name="System Operator",
+            email="sysop@mtbbs.local",
+            level=999
+        )
+
+        # Create test board
+        await board_service.create_board(
+            board_id=0,
+            name="info",
+            description="インフォメーション掲示板",
+            read_level=0,
+            write_level=1
+        )
+
+        # Initialize default messages
+        msg_count = await message_service.initialize_default_messages()
+
+        return {
+            "message": "Database initialized successfully",
+            "users_created": 1,
+            "boards_created": 1,
+            "system_messages_created": msg_count
+        }
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))

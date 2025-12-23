@@ -52,6 +52,45 @@ class BoardService:
             )
             return list(result.scalars().all())
 
+    async def update_board(
+        self,
+        board_id: int,
+        name: Optional[str] = None,
+        description: Optional[str] = None,
+        read_level: Optional[int] = None,
+        write_level: Optional[int] = None,
+        is_active: Optional[bool] = None,
+    ) -> Optional[Board]:
+        """Update board"""
+        async with async_session() as session:
+            result = await session.execute(
+                select(Board).where(Board.board_id == board_id)
+            )
+            board = result.scalar_one_or_none()
+
+            if board:
+                if name is not None:
+                    board.name = name
+                if description is not None:
+                    board.description = description
+                if read_level is not None:
+                    board.read_level = read_level
+                if write_level is not None:
+                    board.write_level = write_level
+                if is_active is not None:
+                    board.is_active = is_active
+
+                board.updated_at = datetime.now()
+                await session.commit()
+                await session.refresh(board)
+
+            return board
+
+    async def delete_board(self, board_id: int) -> bool:
+        """Delete board (soft delete)"""
+        board = await self.update_board(board_id, is_active=False)
+        return board is not None
+
     async def create_message(
         self,
         board_id: int,

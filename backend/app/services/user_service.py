@@ -5,12 +5,10 @@ from typing import Optional, List
 from datetime import datetime
 from sqlalchemy import select, update, func
 from sqlalchemy.ext.asyncio import AsyncSession
-from passlib.context import CryptContext
+import bcrypt
 
 from app.models.user import User
 from app.core.database import async_session
-
-pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 
 
 class UserService:
@@ -19,12 +17,13 @@ class UserService:
     @staticmethod
     def hash_password(password: str) -> str:
         """Hash password"""
-        return pwd_context.hash(password)
+        salt = bcrypt.gensalt()
+        return bcrypt.hashpw(password.encode('utf-8'), salt).decode('utf-8')
 
     @staticmethod
     def verify_password(plain_password: str, hashed_password: str) -> bool:
         """Verify password"""
-        return pwd_context.verify(plain_password, hashed_password)
+        return bcrypt.checkpw(plain_password.encode('utf-8'), hashed_password.encode('utf-8'))
 
     async def authenticate(self, user_id: str, password: str) -> Optional[User]:
         """Authenticate user"""
@@ -46,20 +45,43 @@ class UserService:
         handle_name: str,
         email: Optional[str] = None,
         level: int = 1,
+        is_active: bool = True,
+        must_change_password_on_next_login: bool = False,
     ) -> User:
-        """Create new user"""
+        """Create new user or reactivate deleted user"""
         async with async_session() as session:
-            user = User(
-                user_id=user_id,
-                password_hash=self.hash_password(password),
-                handle_name=handle_name,
-                email=email,
-                level=level,
-            )
-            session.add(user)
-            await session.commit()
-            await session.refresh(user)
-            return user
+            # Check if user already exists (including inactive ones)
+            result = await session.execute(select(User).where(User.user_id == user_id))
+            existing_user = result.scalar_one_or_none()
+
+            if existing_user:
+                # Reactivate deleted user with new data
+                existing_user.password_hash = self.hash_password(password)
+                existing_user.handle_name = handle_name
+                existing_user.email = email
+                existing_user.level = level
+                existing_user.is_active = is_active
+                existing_user.is_banned = False
+                existing_user.must_change_password_on_next_login = must_change_password_on_next_login
+                existing_user.updated_at = datetime.now()
+                await session.commit()
+                await session.refresh(existing_user)
+                return existing_user
+            else:
+                # Create new user
+                user = User(
+                    user_id=user_id,
+                    password_hash=self.hash_password(password),
+                    handle_name=handle_name,
+                    email=email,
+                    level=level,
+                    is_active=is_active,
+                    must_change_password_on_next_login=must_change_password_on_next_login,
+                )
+                session.add(user)
+                await session.commit()
+                await session.refresh(user)
+                return user
 
     async def get_user(self, user_id: str) -> Optional[User]:
         """Get user by ID"""
@@ -68,9 +90,11 @@ class UserService:
             return result.scalar_one_or_none()
 
     async def get_users(self, skip: int = 0, limit: int = 100) -> List[User]:
-        """Get all users"""
+        """Get all active users"""
         async with async_session() as session:
-            result = await session.execute(select(User).offset(skip).limit(limit))
+            result = await session.execute(
+                select(User).where(User.is_active == True).offset(skip).limit(limit)
+            )
             return list(result.scalars().all())
 
     async def get_recent_users(self, limit: int = 20) -> List[User]:

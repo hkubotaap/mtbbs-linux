@@ -12,12 +12,14 @@ export const adminAPI = {
   getUsers: () => apiClient.get('/admin/users'),
   getUser: (userId: string) => apiClient.get(`/admin/users/${userId}`),
   createUser: (data: any) => apiClient.post('/admin/users', data),
+  updateUser: (userId: string, data: any) => apiClient.put(`/admin/users/${userId}`, data),
   deleteUser: (userId: string) => apiClient.delete(`/admin/users/${userId}`),
 
   // Boards
   getBoards: () => apiClient.get('/admin/boards'),
   getBoard: (boardId: number) => apiClient.get(`/admin/boards/${boardId}`),
   createBoard: (data: any) => apiClient.post('/admin/boards', data),
+  updateBoard: (boardId: number, data: any) => apiClient.put(`/admin/boards/${boardId}`, data),
   deleteBoard: (boardId: number) => apiClient.delete(`/admin/boards/${boardId}`),
 
   // Stats
@@ -33,6 +35,9 @@ export const adminAPI = {
     apiClient.put(`/admin/messages/${messageKey}`, data),
   deleteMessage: (messageKey: string) => apiClient.delete(`/admin/messages/${messageKey}`),
   initializeMessages: () => apiClient.post('/admin/messages/initialize'),
+
+  // Database
+  initializeDatabase: () => apiClient.post('/admin/database/initialize'),
 }
 
 export const bbsAPI = {
