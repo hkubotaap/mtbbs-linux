@@ -52,6 +52,8 @@ class BoardCreate(BaseModel):
     description: str | None = None
     read_level: int = 0
     write_level: int = 1
+    enforced_news: bool = False
+    operator_id: str | None = None
 
 
 class BoardUpdate(BaseModel):
@@ -59,6 +61,8 @@ class BoardUpdate(BaseModel):
     description: str | None = None
     read_level: int | None = None
     write_level: int | None = None
+    enforced_news: bool | None = None
+    operator_id: str | None = None
 
 
 class BoardResponse(BaseModel):
@@ -68,6 +72,8 @@ class BoardResponse(BaseModel):
     read_level: int
     write_level: int
     is_active: bool
+    enforced_news: bool
+    operator_id: str | None
 
     class Config:
         from_attributes = True
@@ -207,6 +213,8 @@ async def create_board(board_data: BoardCreate):
             description=board_data.description,
             read_level=board_data.read_level,
             write_level=board_data.write_level,
+            enforced_news=board_data.enforced_news,
+            operator_id=board_data.operator_id,
         )
         return board
     except Exception as e:
@@ -244,6 +252,8 @@ async def update_board(board_id: int, board_data: BoardUpdate):
             description=board_data.description,
             read_level=board_data.read_level,
             write_level=board_data.write_level,
+            enforced_news=board_data.enforced_news,
+            operator_id=board_data.operator_id,
         )
         if not board:
             raise HTTPException(status_code=404, detail="Board not found")
@@ -262,6 +272,27 @@ async def delete_board(board_id: int):
         raise HTTPException(status_code=404, detail="Board not found")
 
     return {"message": "Board deleted successfully"}
+
+
+@router.post("/boards/{board_id}/messages/{message_no}/restore")
+async def restore_message(board_id: int, message_no: int):
+    """Restore soft-deleted message"""
+    board_service = BoardService()
+    success = await board_service.restore_message(board_id, message_no)
+
+    if not success:
+        raise HTTPException(status_code=404, detail="Message not found or not deleted")
+
+    return {"message": "Message restored successfully"}
+
+
+@router.get("/boards/{board_id}/read-position/{user_id}")
+async def get_read_position(board_id: int, user_id: str):
+    """Get user's read position on a board"""
+    board_service = BoardService()
+    position = await board_service.get_read_position(user_id, board_id)
+
+    return {"last_read_message_no": position}
 
 
 # System stats

@@ -211,6 +211,15 @@ class MessageService:
                 "description": "ファイルボード利用案内",
                 "variables": "",
                 "is_active": True
+            },
+            {
+                "message_key": "ENFORCED_NEWS_HEADER",
+                "message_name": "強制ニュースヘッダー",
+                "category": "news",
+                "content": "=== 重要なお知らせ ===",
+                "description": "ログイン時の強制ニュース表示ヘッダー（カスタマイズ可能）",
+                "variables": "",
+                "is_active": True
             }
             ]
 
@@ -233,9 +242,22 @@ class MessageService:
             return count
 
     async def get_message_content(self, message_key: str, **kwargs) -> str:
-        """Get formatted message content with variable substitution"""
+        """Get formatted message content with variable substitution
+
+        Args:
+            message_key: System message key to retrieve
+            **kwargs: Variables for message formatting, plus optional 'default' for fallback value
+
+        Returns:
+            Formatted message content, or default value if message not found
+        """
+        # Extract default value if provided
+        default_value = kwargs.pop('default', None)
+
         message = await self.get_message_by_key(message_key)
         if not message or not message.is_active:
+            if default_value is not None:
+                return default_value
             return f"[Message {message_key} not found]"
 
         try:

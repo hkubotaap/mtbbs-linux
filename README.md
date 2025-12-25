@@ -1,5 +1,7 @@
 # MTBBS Linux - Modern BBS System with Database
 
+**Version: 0.1α**
+
 オリジナルのパソコン通信BBSシステムを現代的な技術で再実装したシステムです。
 SQLiteデータベースによる永続化、Web管理UI、カスタマイズ可能なメッセージシステムを搭載しています。
 
@@ -430,6 +432,21 @@ SELECT * FROM system_messages;
 ## ライセンス
 
 本プロジェクトはオリジナルのMTBBSのコンセプトを継承し、現代的な技術で再実装したものです。
+
+### 著作権
+
+**Original MTBBS Ver 3.02**
+```
+Copyright (C) 1997.10.9 By Yoshihiro Myokan
+```
+
+**MTBBS-Linux**
+```
+Copyright (C) 2025 kuchan
+```
+
+本ソフトウェアは、Yoshihiro Myokan氏によるオリジナルのMTBBS Ver 3.02のコンセプトとデザインを基に、
+現代的な技術スタック（Python, React, SQLite）で再実装されたものです。
 
 ## 貢献
 

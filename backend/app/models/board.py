@@ -1,7 +1,7 @@
 """
 Board and Message models
 """
-from sqlalchemy import Column, Integer, String, Text, DateTime, ForeignKey, Boolean
+from sqlalchemy import Column, Integer, String, Text, DateTime, ForeignKey, Boolean, UniqueConstraint
 from sqlalchemy.sql import func
 from sqlalchemy.orm import relationship
 from app.core.database import Base
@@ -23,6 +23,8 @@ class Board(Base):
     # Settings
     is_active = Column(Boolean, default=True)
     max_messages = Column(Integer, default=1000)
+    enforced_news = Column(Boolean, default=False)  # Force display news on login
+    operator_id = Column(String(8), ForeignKey("users.user_id"), nullable=True)  # Board operator
 
     created_at = Column(DateTime(timezone=True), server_default=func.now())
     updated_at = Column(DateTime(timezone=True), onupdate=func.now())
@@ -53,6 +55,11 @@ class Message(Base):
     # Response chain
     parent_id = Column(Integer, ForeignKey("messages.id"), nullable=True)
 
+    # Soft delete
+    deleted = Column(Boolean, default=False)
+    deleted_at = Column(DateTime(timezone=True), nullable=True)
+    deleted_by = Column(String(8), ForeignKey("users.user_id"), nullable=True)
+
     created_at = Column(DateTime(timezone=True), server_default=func.now())
     updated_at = Column(DateTime(timezone=True), onupdate=func.now())
 
@@ -63,3 +70,25 @@ class Message(Base):
 
     def __repr__(self):
         return f"<Message {self.message_no} on Board {self.board_id}: {self.title}>"
+
+
+class UserReadPosition(Base):
+    """Track user's read position on each board"""
+    __tablename__ = "user_read_positions"
+
+    id = Column(Integer, primary_key=True, index=True)
+    user_id = Column(String(8), ForeignKey("users.user_id"), nullable=False)
+    board_id = Column(Integer, ForeignKey("boards.id"), nullable=False)
+    last_read_message_no = Column(Integer, nullable=False, default=0)
+    last_read_at = Column(DateTime(timezone=True), nullable=True)
+
+    created_at = Column(DateTime(timezone=True), server_default=func.now())
+    updated_at = Column(DateTime(timezone=True), onupdate=func.now())
+
+    # Composite unique constraint
+    __table_args__ = (
+        UniqueConstraint('user_id', 'board_id', name='uq_user_board_read'),
+    )
+
+    def __repr__(self):
+        return f"<UserReadPosition user={self.user_id} board={self.board_id} last_read={self.last_read_message_no}>"

@@ -26,7 +26,30 @@
       "Bash(netstat:*)",
       "Bash(xargs:*)",
       "Bash(npm install)",
-      "Bash(npm run build:*)"
+      "Bash(npm run build:*)",
+      "Bash(git push:*)",
+      "Bash(cat:*)",
+      "Bash(git tag:*)",
+      "Bash(find:*)",
+      "Bash(if [ -f \"data/mtbbs.db\" ])",
+      "Bash(then cp data/mtbbs.db data/mtbbs.db.backup)",
+      "Bash(else echo \"ℹ Database file not found, will be created\")",
+      "Bash(timeout 5 bash:*)",
+      "Bash(timeout 5 telnet:*)",
+      "Bash(powershell \"Stop-Process -Id 26396 -Force\")",
+      "Bash(powershell \"Stop-Process -Id 34724 -Force\")",
+      "Bash(powershell \"Stop-Process -Id 26452 -Force\")",
+      "Bash(powershell \"Stop-Process -Id 20908 -Force\")",
+      "Bash(timeout 3 bash:*)",
+      "Bash(powershell \"Stop-Process -Id 20420 -Force\")",
+      "Bash(powershell \"Stop-Process -Id 33800 -Force\")",
+      "Bash(timeout 1 bash:*)",
+      "Bash(powershell \"Stop-Process -Id 38816 -Force\")",
+      "Bash(PYTHONDONTWRITEBYTECODE=1 python:*)",
+      "Bash(powershell \"Stop-Process -Id 10464 -Force\")",
+      "Bash(powershell \"Stop-Process -Id 41856 -Force\")",
+      "Bash(powershell \"Stop-Process -Id 41464 -Force\")",
+      "Bash(chmod:*)"
     ]
   }
 }

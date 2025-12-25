@@ -31,9 +31,9 @@ async def main():
             email="admin@mtbbs.local",
             level=9,
         )
-        print(f"✓ Created admin user: {admin.user_id}")
+        print(f"[OK] Created admin user: {admin.user_id}")
     except Exception as e:
-        print(f"✗ Admin user might already exist: {e}")
+        print(f"[SKIP] Admin user might already exist: {e}")
 
     # Create test user
     print("Creating test user...")
@@ -45,19 +45,19 @@ async def main():
             email="test@mtbbs.local",
             level=1,
         )
-        print(f"✓ Created test user: {user.user_id}")
+        print(f"[OK] Created test user: {user.user_id}")
     except Exception as e:
-        print(f"✗ Test user might already exist: {e}")
+        print(f"[SKIP] Test user might already exist: {e}")
 
     # Create boards
     boards_data = [
-        (1, "General", "General discussion board"),
-        (2, "Announcements", "System announcements and news"),
-        (3, "Help", "Help and support"),
-        (4, "Off-Topic", "Off-topic discussions"),
+        (1, "General", "General discussion board", False, None),
+        (2, "Announcements", "System announcements and news", True, "admin"),  # Enforced news
+        (3, "Help", "Help and support", False, "admin"),
+        (4, "Off-Topic", "Off-topic discussions", False, None),
     ]
 
-    for board_id, name, description in boards_data:
+    for board_id, name, description, enforced_news, operator_id in boards_data:
         print(f"Creating board: {name}...")
         try:
             board = await board_service.create_board(
@@ -66,8 +66,10 @@ async def main():
                 description=description,
                 read_level=0,
                 write_level=1,
+                enforced_news=enforced_news,
+                operator_id=operator_id,
             )
-            print(f"✓ Created board: {board.name}")
+            print(f"[OK] Created board: {board.name} (enforced_news={enforced_news}, operator={operator_id})")
 
             # Create sample messages
             messages_data = [
@@ -84,12 +86,12 @@ async def main():
                         title=title,
                         body=body,
                     )
-                    print(f"  ✓ Created message: {msg.title}")
+                    print(f"  [OK] Created message: {msg.title}")
                 except Exception as e:
-                    print(f"  ✗ Error creating message: {e}")
+                    print(f"  [ERROR] Error creating message: {e}")
 
         except Exception as e:
-            print(f"✗ Board might already exist: {e}")
+            print(f"[SKIP] Board might already exist: {e}")
 
     print("\n" + "=" * 50)
     print("Test data initialization complete!")

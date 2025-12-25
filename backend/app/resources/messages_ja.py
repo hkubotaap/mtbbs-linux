@@ -1,60 +1,69 @@
 # -*- coding: utf-8 -*-
 """
 MTBBS Japanese Message Templates
+
 Original MTBBS Ver 3.02
 Copyright (C) 1997.10.9 By Yoshihiro Myokan
+
+MTBBS-Linux
+Copyright (C) 2025 kuchan
 """
 
-MTBBS_VERSION = "4.0.0-linux"
+MTBBS_VERSION = "0.1α"
 
 # Main Menu Message
-MAIN_MENU = """MTBBS Ver {version} - Main Menu   {time}  {user_id} / {handle}
-BOARD/MAIL -------------  INFORMATION ------------  OTHERS -----------------
-[N]ews  新着記事を読む| [A]pply   ユーザ登録    | [Q]uit    接続を切る
-[N@]    全て News       | [H]elp    コマンド一覧  | [I]nstall ユーザ設定
-[R]ead  メッセージを読む| [U]sers   ユーザリスト  | [W]ho     ログイン中
-[E]nter メッセージの書込| [L]og     ログ記録      | [C]hat    チャット・電報
-[K]ill  メッセージの削除| pr[O]file プロフィール  | [T]elegram 電報
-[#]     ステータスの表示| s[Y]sinfo ホストの紹介  | e[X]who   IPアドレス表示
-[M]ail  メール読む      | [_]       Version 表示  | [F]ile    ファイルボード
-[P]ost  投稿            | [S]ysop   SYSOP呼び出し | [FN]      新ファイル
+MAIN_MENU = """MTBBS Ver {version} - Main Menu
+{time}  {user_id} / {handle}
+================================================================================
+[N]ews   新着を読む        [R]ead   メッセージを読む      [E]nter  メッセージ書込
+[N@]     全て News         [M]ail   メールを読む          [P]ost   投稿
+--------------------------------------------------------------------------------
+[A]pply  ユーザ登録        [H]elp   ヘルプ                [U]sers  ユーザリスト
+[W]ho    ログイン中        [C]hat   チャット              [I]nstall 設定
+--------------------------------------------------------------------------------
+[Q]uit   ログアウト        [#]      ステータス
 """
 
 # File Board Menu
-FILE_MENU = """MTBBS Ver {version} - File Board Menu
- コマンド ---------------- ダウンロード ------------  アップロード------------
-  [L]ist    ファイルリスト| [ZD] : Zmodem Download   | [FU] : FTP経由Upload
-  [K]ill    削除          | [YD] : Ymodem Download   | [ZU] : Zmodem Upload
-  [I]nfo    情報          | [MD] : Mlink  Download   | [YU] : Ymodem Upload
-  [?]       Fileメニュー  | [XD] : Xmodem Download   | [MU] : Mlink  Upload
-  [0]       終了          | [D]  : ファイルを読む    | [XU] : Xmodem Upload
+FILE_MENU = """MTBBS Ver {version} - File Board
+========================================
+[L]ist  ファイルリスト
+[I]nfo  情報
+[K]ill  削除
+[?]     ヘルプ
+[0]     終了
 """
 
 # Read Menu
-READ_MENU = """                                                                / read menu
-COMMANDS ---------------  COMMANDS ---------------  番号指定 ---------------
-[R]ead       順番に読む  | [#]     status          |  n   n番から順番に読む
-[I]ndividual 個別の番号  | [?]     メニュー        | -n   n番から逆に読む
-[S]earch     検索        | [0]     終了            |  0   最初から順番に読む
-[L]ist      タイトルのみ |                         |[RET] 最後から逆に読む
+READ_MENU = """Read Menu
+========================================
+[R]ead    順番に読む
+[I]ndiv   個別指定
+[S]earch  検索
+[L]ist    一覧
+[#]       ステータス
+[?]       ヘルプ
+[0]       終了
 """
 
 # Install Menu
-INSTALL_MENU = """                                                               / install menu
----------------------------------- INSTALL -----------------------------------
-[-]:改行コード  | [P]:パスワード   | [H]:ハンドル名    | [M]:メモ
-[N]:新着リスト   | [-]:ESC 使用     | [-]:YMODEM-g     | [B]:電報着信表示
-[-]:漢字表示    | [-]:漢字範囲     | [-]:カナ変換表示  | [R]:既読日付
-[A]:ログイン通知 |                   |                   | [0]:end
+INSTALL_MENU = """Install Menu (設定)
+========================================
+[P] パスワード変更
+[H] ハンドル名変更
+[M] メモ編集
+[0] 終了
 """
 
 # Chat Menu
-CHAT_MENU = """                                                            / chat menu
--------------------------------- CHAT ----------------------------------
-[W]ho     ログイン中 | [E]cho   ECHO ON/OFF | [T]elegram 電報を送る
-pr[O]file プロフィール | [?]      この画面    | [N]ow      現在時刻
-[M]ain    MAINコマンド | [S]ysop  SYSOP 呼出  | //,^^      終了
-[C]hat    チャット編集  |                      |
+CHAT_MENU = """Chat Menu
+========================================
+[W]ho      ログイン中
+[T]elegram 電報送信
+[C]hat     チャット編集
+[M]ain     メインへ
+[?]        ヘルプ
+//,^^      終了
 """
 
 # Sysop Menu
@@ -112,19 +121,16 @@ CHAT_ROOM_OPENING = """
 
 # Opening Message
 OPENING_MESSAGE = """
-
- KANJI CODE = [UTF-8]
+KANJI CODE = [SJIS]
 
 今日は{date} {weekday}曜日です。
----------------------------------------------------------
+========================================
 MTBBSへようこそ！
-MTBBSはTelnetで接続可能なホストプログラムです。
-Python + FastAPIによって開発されLinuxで動作します。
----------------------------------------------------------
+========================================
 
-<<< あなたは、{access_count}番目のログイン者です >>>
+<<< {access_count}番目のログイン者です >>>
 
-# ゲストでログインする場合は guest と入力してください.
+# ゲストは guest と入力
 """
 
 # Logout Message

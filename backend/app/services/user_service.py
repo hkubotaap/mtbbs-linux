@@ -146,6 +146,15 @@ class UserService:
             result = await session.execute(select(func.count()).select_from(User))
             return result.scalar() or 0
 
+    async def is_user_id_available(self, user_id: str) -> bool:
+        """Check if user ID is available for registration"""
+        async with async_session() as session:
+            result = await session.execute(
+                select(User).where(User.user_id == user_id, User.is_active == True)
+            )
+            existing_user = result.scalar_one_or_none()
+            return existing_user is None
+
     async def delete_user(self, user_id: str) -> bool:
         """Delete user (soft delete)"""
         user = await self.update_user(user_id, is_active=False, is_banned=True)
