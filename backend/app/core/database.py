@@ -1,6 +1,7 @@
 """
 Database configuration and connection management
 """
+import sqlite3
 from sqlalchemy.ext.asyncio import create_async_engine, AsyncSession, async_sessionmaker
 from sqlalchemy.orm import declarative_base
 from app.core.config import settings
@@ -40,3 +41,16 @@ async def get_db() -> AsyncSession:
             raise
         finally:
             await session.close()
+
+
+def get_connection(db_path: str) -> sqlite3.Connection:
+    """
+    Get synchronous SQLite connection for mail service
+
+    Args:
+        db_path: Path to SQLite database file
+
+    Returns:
+        SQLite connection object
+    """
+    return sqlite3.connect(db_path)

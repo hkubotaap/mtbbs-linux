@@ -33,8 +33,14 @@ class TelnetServer:
         # Initialize monitor
         try:
             import os
-            db_path = os.path.join(os.getcwd(), "data", "mtbbs.db")
-            data_dir = os.path.join(os.getcwd(), "data")
+            # __file__ is backend/app/protocols/telnet_server.py
+            # Go up from protocols -> app -> backend -> mtbbs-linux (project root)
+            this_file = os.path.abspath(__file__)  # backend/app/protocols/telnet_server.py
+            app_dir = os.path.dirname(os.path.dirname(this_file))  # backend/app
+            backend_dir = os.path.dirname(app_dir)  # backend
+            project_root = os.path.dirname(backend_dir)  # mtbbs-linux
+            db_path = os.path.join(project_root, "data", "mtbbs.db")
+            data_dir = os.path.join(project_root, "data")
             initialize_monitor(db_path, data_dir)
             logger.info("System monitor initialized")
         except Exception as e:

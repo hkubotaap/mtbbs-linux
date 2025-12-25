@@ -24,7 +24,8 @@ class Settings(BaseSettings):
     TELNET_IDLE_TIMEOUT: int = 1800  # 30 minutes
 
     # Database
-    DATABASE_URL: str = "sqlite+aiosqlite:///./mtbbs.db"
+    DATABASE_URL: str = "sqlite+aiosqlite:///../data/mtbbs.db"
+    DATABASE_PATH: str = "../data/mtbbs.db"
 
     # Redis
     REDIS_URL: str = "redis://localhost:6379"
@@ -52,6 +53,7 @@ class Settings(BaseSettings):
     class Config:
         env_file = ".env"
         case_sensitive = True
+        extra = "ignore"  # Ignore extra fields in .env
 
 
 settings = Settings()

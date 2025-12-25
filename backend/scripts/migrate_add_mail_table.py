@@ -14,8 +14,6 @@ from pathlib import Path
 project_root = Path(__file__).parent.parent.parent
 sys.path.insert(0, str(project_root))
 
-from app.core.database import get_connection
-
 
 def migrate_add_mail_table(db_path: str):
     """
@@ -27,7 +25,7 @@ def migrate_add_mail_table(db_path: str):
     print(f"Starting migration: Add mail table")
     print(f"Database: {db_path}")
 
-    conn = get_connection(db_path)
+    conn = sqlite3.connect(db_path)
     cursor = conn.cursor()
 
     try:

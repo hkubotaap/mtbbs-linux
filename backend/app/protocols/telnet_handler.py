@@ -3,6 +3,7 @@ Telnet Handler - BBS Session Management
 """
 import asyncio
 import logging
+import os
 from datetime import datetime
 from typing import Optional
 from app.resources.messages_ja import MTBBS_VERSION
@@ -41,7 +42,16 @@ class TelnetHandler:
         self.user_service = UserService()
         self.board_service = BoardService()
         self.message_service = MessageService()
-        self.mail_service = MailService(settings.DATABASE_PATH)
+
+        # Get absolute path to database
+        # __file__ is backend/app/protocols/telnet_handler.py
+        # Go up from protocols -> app -> backend -> mtbbs-linux (project root)
+        this_file = os.path.abspath(__file__)  # backend/app/protocols/telnet_handler.py
+        app_dir = os.path.dirname(os.path.dirname(this_file))  # backend/app
+        backend_dir = os.path.dirname(app_dir)  # backend
+        project_root = os.path.dirname(backend_dir)  # mtbbs-linux
+        db_path = os.path.join(project_root, "data", "mtbbs.db")
+        self.mail_service = MailService(db_path)
 
         # Input buffer
         self.input_buffer = ""
@@ -337,8 +347,8 @@ class TelnetHandler:
                     )
 
         await self.send_line("=" * 70)
-        await self.send_line("Press Enter to continue...")
-        await self.receive_line()
+        # Note: Original MTBBS does not wait for user input here
+        # Just display the enforced news and continue to main menu
 
     async def main_loop(self):
         """Main command loop with continuous command execution support"""
@@ -346,8 +356,10 @@ class TelnetHandler:
             await self.show_main_menu()
             await self.send("\r\nCommand: ")
             command = await self.receive_line()
+            logger.info(f"DEBUG: Command value received: {command!r}, type: {type(command)}, bool: {bool(command)}")
 
             if not command:
+                logger.info("DEBUG: Command is empty, continuing")
                 continue
 
             # Parse command: first character is the main command, rest is command_line
@@ -357,6 +369,11 @@ class TelnetHandler:
 
             # Debug log
             logger.info(f"Command received: full_cmd='{full_cmd}', cmd='{cmd}', command_line='{self.command_line}'")
+            logger.info(f"Command character code: {ord(cmd) if cmd else 'empty'}")
+            if cmd == "@":
+                logger.info("DEBUG: @ command detected, calling sysop_menu()")
+            elif "@" in full_cmd:
+                logger.info(f"DEBUG: @ found in full_cmd but cmd='{cmd}', @ ord={ord('@')}")
 
             try:
                 if cmd == "Q":
@@ -445,8 +462,8 @@ class TelnetHandler:
             await self.send_line("新着メッセージはありません。")
 
         await self.send_line("=" * 70)
-        await self.send_line("Press Enter to continue...")
-        await self.receive_line()
+        # Note: Original MTBBS does not wait for user input here
+        logger.info("NEWS COMMAND COMPLETED - NO PRESS ENTER PROMPT SENT")
 
     async def read_board(self):
         """Read message board with continuous command support (r0@)"""
